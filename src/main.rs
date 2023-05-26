@@ -81,9 +81,6 @@ impl BigNumber {
 
         false
     }
-    /*fn add(&mut self, other: &mut BigNumber) {
-
-    }*/
 
     fn subtract(&mut self, other: &mut BigNumber) {
         let self_is_greater = self.is_greater_than_or_equal_to(other);
@@ -101,40 +98,38 @@ impl BigNumber {
     }
 
     fn _subtract(&mut self, other: &BigNumber) {
-        let mut carry = 0;
+        let mut borrow = 0;
         for i in 0..self.digits.len() {
             let other_digit = if i < other.digits.len() {
                 other.digits[i]
             } else {
                 0
             };
-            let mut diff: i32 = self.digits[i] as i32 - other_digit as i32 - carry;
+            let mut diff: i32 = self.digits[i] as i32 - other_digit as i32 - borrow;
             if diff < 0 {
                 diff += 10;
-                carry = 1;
+                borrow = 1;
             } else {
-                carry = 0;
+                borrow = 0;
             }
             self.digits[i] = diff as u32;
         }
         self.normalize();
+        if self.digits.len() == 0 {
+            self.digits = vec![0 as u32];
+        }
     }
 
     fn add(&mut self, other: &mut BigNumber) {
-        let self_is_greater = self.is_greater_than_or_equal_to(other);
-        if !self_is_greater {
-            self.swap_digits(other);
-            self.sign = other.sign;
-        }
+        if self.sign != other.sign {
+            if !self.is_greater_than_or_equal_to(other) {
+                self.swap_digits(other);
+            }
 
-        if self.sign == Sign::Positive && other.sign == Sign::Positive {
-            self._add(other);
-        } else if self.sign == Sign::Negative && other.sign == Sign::Negative {
-            self._add(other);
-            self.sign = Sign::Negative;
-        } else {
             self._subtract(other);
+            return;
         }
+        self._add(other);
     }
 
     fn _add(&mut self, other: &BigNumber) {
@@ -151,7 +146,11 @@ impl BigNumber {
                 0
             };
 
-            let other_digit = if i < other.digits.len() { other.digits[i] } else { 0 };
+            let other_digit = if i < other.digits.len() {
+                other.digits[i]
+            } else {
+                0
+            };
 
             let sum = self_digit + other_digit + carry;
             self.digits[i] = sum % 10;
