@@ -1,5 +1,8 @@
 use std::io;
 
+#[cfg(test)]
+mod tests;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Sign {
     Positive,
@@ -68,7 +71,7 @@ impl BigNumber {
             return false;
         }
 
-        for (&self_digit, &other_digit) in self.digits.iter().rev().zip(other.digits.iter().rev()) {
+        for (self_digit, other_digit) in self.digits.iter().zip(other.digits.iter()) {
             if self_digit > other_digit {
                 return true;
             } else if self_digit < other_digit {
@@ -78,7 +81,6 @@ impl BigNumber {
 
         false
     }
-
     /*fn add(&mut self, other: &mut BigNumber) {
 
     }*/
@@ -90,9 +92,7 @@ impl BigNumber {
             swap_sign_with_other(self, other);
         }
 
-        if self.sign == Sign::Positive && 
-            self.sign == Sign::Positive 
-        {
+        if self.sign == Sign::Positive && self.sign == Sign::Positive {
             self._subtract(other);
             return;
         }
@@ -103,8 +103,12 @@ impl BigNumber {
     fn _subtract(&mut self, other: &BigNumber) {
         let mut carry = 0;
         for i in 0..self.digits.len() {
-            let other_digit = if i < other.digits.len() { other.digits[i] } else { 0 };
-            let mut diff :i32 = self.digits[i] as i32 - other_digit as i32 - carry;
+            let other_digit = if i < other.digits.len() {
+                other.digits[i]
+            } else {
+                0
+            };
+            let mut diff: i32 = self.digits[i] as i32 - other_digit as i32 - carry;
             if diff < 0 {
                 diff += 10;
                 carry = 1;
@@ -137,11 +141,19 @@ impl BigNumber {
         let mut carry = 0;
         let max_len = self.digits.len().max(other.digits.len());
 
+        // Extend the length of self.digits if necessary
+        self.digits.resize(max_len, 0);
+
         for i in 0..max_len {
-            let self_digit = if i < self.digits.len() { self.digits[i] } else { 0 };
+            let self_digit = if i < self.digits.len() {
+                self.digits[i]
+            } else {
+                0
+            };
+
             let other_digit = if i < other.digits.len() { other.digits[i] } else { 0 };
+
             let sum = self_digit + other_digit + carry;
-            self.digits.resize(i + 1, 0);
             self.digits[i] = sum % 10;
             carry = sum / 10;
         }
@@ -237,7 +249,6 @@ impl BigNumber {
 
         true
     }
-
 
     // Helper method to calculate the square root of the number
     fn sqrt(&self) -> BigNumber {
@@ -398,7 +409,6 @@ impl BigNumber {
         quotient.normalize();
         quotient
     }
-
 }
 
 fn main() {
@@ -408,6 +418,4 @@ fn main() {
     // println!("Is prime? {}", is_prime);
     let is_divisible = num.is_divisible_by(&mut num2);
     println!("Is divisible by 6 {}", is_divisible);
-
 }
-
