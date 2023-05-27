@@ -31,6 +31,20 @@ mod tests {
     }
 
     #[test]
+    fn test_is_prime_2() {
+        let mut num = BigNumber::from_string("2");
+        let is_prime = num.is_prime();
+        assert_eq!(is_prime, true);
+    }
+
+    #[test]
+    fn test_is_prime_11() {
+        let mut num = BigNumber::from_string("11");
+        let is_prime = num.is_prime();
+        assert_eq!(is_prime, true);
+    }
+
+    #[test]
     fn test_from_string_positive() {
         let input = "123";
         let expected_digits = vec![3, 2, 1];

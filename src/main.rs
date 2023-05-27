@@ -65,13 +65,17 @@ impl BigNumber {
     }
 
     fn is_greater_than_or_equal_to(&self, other: &BigNumber) -> bool {
+        if self.sign != other.sign {
+            return self.sign == Sign::Positive;
+        }
+
         if self.digits.len() > other.digits.len() {
             return true;
         } else if self.digits.len() < other.digits.len() {
             return false;
         }
 
-        for (self_digit, other_digit) in self.digits.iter().zip(other.digits.iter()) {
+        for (&self_digit, &other_digit) in self.digits.iter().rev().zip(other.digits.iter().rev()) {
             if self_digit > other_digit {
                 return true;
             } else if self_digit < other_digit {
@@ -79,7 +83,7 @@ impl BigNumber {
             }
         }
 
-        false
+        true
     }
 
     fn subtract(&mut self, other: &mut BigNumber) {
@@ -234,16 +238,19 @@ impl BigNumber {
             return false;
         }
 
-        let two = BigNumber::from_string("2");
-        let mut divisor = two.clone();
+        if self.is_equal_to(&BigNumber::from_string("2")) {
+            return true;
+        }
 
-        while divisor.is_less_than(&self.sqrt()) {
+        let three = BigNumber::from_string("3");
+        let mut divisor = three.clone();
+
+        while divisor.is_less_than_or_equal_to(&self.sqrt()) {
+            divisor.print();
             if self.is_divisible_by(&mut divisor) {
                 return false;
             }
-            divisor.print();
-
-            divisor.add(&mut BigNumber::from_string("1"));
+            divisor.add(&mut BigNumber::from_string("2")); // Skip even numbers
         }
 
         true
@@ -251,43 +258,44 @@ impl BigNumber {
 
     // Helper method to calculate the square root of the number
     fn sqrt(&self) -> BigNumber {
-        let mut x = self.clone();
-        let mut y = BigNumber::from_string("1");
+        let mut guess = BigNumber::from_string("1");
+        let mut new_guess = self.clone();
 
-        while y.is_less_than_or_equal_to(&x) {
-            x.shift_right(1);
-            y.shift_left(1);
+        while new_guess.is_less_than(&guess) {
+            guess = new_guess.clone();
+            new_guess = self.clone();
+            new_guess.divide(&guess);
+            new_guess.add(&mut guess);
+            new_guess.divide(&BigNumber::from_string("2"));
         }
 
-        while y.is_greater_than_or_equal_to(&x) {
-            y.subtract(&mut x);
-            x.shift_right(1);
-            y.shift_left(1);
-            y.shift_left(1);
-        }
-
-        x
+        guess
     }
 
     // Helper method to check if the number is divisible by another number
-    fn is_divisible_by(&self, divisor: &mut BigNumber) -> bool {
+    fn is_divisible_by(&self, divisor: &BigNumber) -> bool {
         if divisor.is_zero() {
             panic!("Division by zero");
+        }
+
+        if divisor.digits[0] == 2 && divisor.digits.len() == 1 {
+            return !self.digits.last().map_or(false, |&digit| digit % 2 == 1);
         }
 
         let mut dividend = self.clone();
         dividend.sign = Sign::Positive;
 
-        while dividend.is_greater_than_or_equal_to(divisor) {
-            let mut quotient = dividend.divide(divisor);
-            let mut remainder = dividend.clone();
-            remainder.subtract(&mut quotient.multiply(divisor));
+        let mut sqrt_divisor = divisor.sqrt();
+        sqrt_divisor.add(&mut BigNumber::from_string("1"));
 
-            if remainder.is_zero() {
+        let mut current_divisor = BigNumber::from_string("3");
+
+        while current_divisor.is_less_than_or_equal_to(&sqrt_divisor) {
+            if dividend.is_divisible_by(&current_divisor) {
                 return true;
             }
 
-            dividend = remainder;
+            current_divisor.add(&mut BigNumber::from_string("2"));
         }
 
         false
@@ -315,6 +323,24 @@ impl BigNumber {
 
     fn is_negative(&self) -> bool {
         self.sign == Sign::Negative
+    }
+
+    fn is_equal_to(&self, other: &BigNumber) -> bool {
+        if self.sign != other.sign {
+            return false;
+        }
+
+        if self.digits.len() != other.digits.len() {
+            return false;
+        }
+
+        for (&self_digit, &other_digit) in self.digits.iter().zip(other.digits.iter()) {
+            if self_digit != other_digit {
+                return false;
+            }
+        }
+
+        true
     }
 
     fn is_less_than_or_equal_to(&self, other: &BigNumber) -> bool {
@@ -413,8 +439,8 @@ impl BigNumber {
 fn main() {
     let mut num = BigNumber::from_string("36");
     let mut num2 = BigNumber::from_string("6");
-    // let is_prime = num.is_prime();
-    // println!("Is prime? {}", is_prime);
+    let is_prime = num.is_prime();
+    println!("Is prime? {}", is_prime);
     let is_divisible = num.is_divisible_by(&mut num2);
     println!("Is divisible by 6 {}", is_divisible);
 }
